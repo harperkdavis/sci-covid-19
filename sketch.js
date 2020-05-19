@@ -4,13 +4,15 @@ let healthyCount = 0;
 let infectedCount = 0;
 let recoveredCount = 0;
 let deadCount = 0;
+let graphData = [];
+let graphSpeed = 5;
 population = [];
 
 
 function setup() {
   createCanvas(innerWidth, innerHeight);
   frameRate(60);
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 100; i++) {
     population.push(new Dot());
   }
   population[0].infect();
@@ -36,6 +38,14 @@ function update() {
       }
     }
   }
+  if (time % graphSpeed === 0) {
+    graphData.push({
+      healthy: healthyCount,
+      infected: infectedCount,
+      recovered: recoveredCount,
+      dead: deadCount,
+    });
+  }
 }
 
 function draw() {
@@ -47,11 +57,33 @@ function draw() {
   textSize(40);
   fill(255);
   textAlign(LEFT, TOP);
-  stroke(0);
+  noStroke(0);
   text("Healthy: " + healthyCount, 5, 5);
   text("Infected: " + infectedCount, 5, 55);
   text("Recovered: " + recoveredCount, 5, 105);
   text("Dead: " + deadCount, 5, 155);
+
+  noStroke();
+  for (let i = 0; i < graphData.length; i++) {
+    strokeWeight(1);
+    let h = graphData[i].infected;
+    let hpast = 0;
+    stroke(204, 63, 63);
+    line(i + 5, innerHeight - 5 - hpast, i + 5, innerHeight - 5 - h);
+    hpast = h;
+    h += graphData[i].healthy;
+    stroke(66, 232, 194);
+    line(i + 5, innerHeight - 5 - hpast, i + 5, innerHeight - 5 - h);
+    hpast = h;
+    h += graphData[i].recovered;
+    stroke(75, 164, 219);
+    line(i + 5, innerHeight - 5 - hpast, i + 5, innerHeight - 5 - h);
+    hpast = h;
+    h += graphData[i].dead;
+    stroke(120, 120, 120);
+    line(i + 5, innerHeight - 5 - hpast, i + 5, innerHeight - 5 - h);
+
+  }
 }
 
 class Dot {
@@ -72,7 +104,7 @@ class Dot {
     this.yD = 0;
     this.size = 30;
     this.sizeD = 0;
-    this.seed = noise(-10000, 10000);
+    this.seed = noise(-100000, 100000);
     this.infectedState = 0;
     this.virusTime = -1;
     this.vulnerability = noise(this.seed) * 2;
@@ -85,7 +117,7 @@ class Dot {
       this.y += Math.cos(this.direction) * 4;
       for (let dot of population) {
         if (dot != this && !dot.dead) {
-          if (dist(this.x, this.y, dot.x, dot.y) < 30) {
+          if (dist(this.x, this.y, dot.x, dot.y) < 20) {
             this.x += Math.sin(this.direction);
             this.y += Math.cos(this.direction);
             this.direction = lerp(this.direction, dot.direction, 0.01);
@@ -171,7 +203,7 @@ class Dot {
   infect() {
     if (this.infectedState === 0) {
       this.infectedState = 1;
-      this.virusTime = 1000;
+      this.virusTime = 1000 + round(random(-400, 400));
     }
   }
 
