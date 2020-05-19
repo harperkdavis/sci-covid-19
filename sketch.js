@@ -5,14 +5,18 @@ let infectedCount = 0;
 let recoveredCount = 0;
 let deadCount = 0;
 let graphData = [];
-let graphSpeed = 5;
+let graphSpeed = 10;
+let populationCount = 80;
+let gamerules = {
+  recoveredBecomesSusceptible : false,
+}
 population = [];
 
 
 function setup() {
   createCanvas(innerWidth, innerHeight);
   frameRate(60);
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < populationCount; i++) {
     population.push(new Dot());
   }
   population[0].infect();
@@ -58,10 +62,14 @@ function draw() {
   fill(255);
   textAlign(LEFT, TOP);
   noStroke(0);
-  text("Healthy: " + healthyCount, 5, 5);
-  text("Infected: " + infectedCount, 5, 55);
-  text("Recovered: " + recoveredCount, 5, 105);
-  text("Dead: " + deadCount, 5, 155);
+  let healthyText = round((healthyCount / populationCount) * 1000) / 10;
+  let infectText = round((infectedCount / populationCount) * 1000) / 10;
+  let recovText = round((recoveredCount / populationCount) * 1000) / 10;
+  let deadText = round((deadCount / populationCount) * 1000) / 10;
+  text("Susceptible: " + healthyCount + " (" + healthyText + "%)", 5, 5);
+  text("Infected: " + infectedCount + " (" + infectText + "%)", 5, 55);
+  text("Recovered: " + recoveredCount + " (" + recovText + "%)", 5, 105);
+  text("Dead: " + deadCount + " (" + deadText + "%)", 5, 155);
 
   noStroke();
   for (let i = 0; i < graphData.length; i++) {
@@ -107,7 +115,7 @@ class Dot {
     this.seed = noise(-100000, 100000);
     this.infectedState = 0;
     this.virusTime = -1;
-    this.vulnerability = noise(this.seed) * 2;
+    this.vulnerability = random(0, 2)
     this.dead = false;
   }
 
@@ -120,7 +128,7 @@ class Dot {
           if (dist(this.x, this.y, dot.x, dot.y) < 20) {
             this.x += Math.sin(this.direction);
             this.y += Math.cos(this.direction);
-            this.direction = lerp(this.direction, dot.direction, 0.01);
+            this.direction = lerp(this.direction, dot.direction, 0.004);
 
           }
           if (dist(this.x, this.y, dot.x, dot.y) < 100) {
@@ -168,6 +176,12 @@ class Dot {
           this.size = 25;
         }
       }
+      if (this.infectedState === 2) {
+        if (random(0, 1000) < 1 && gamerules.recoveredBecomesSusceptible) {
+          this.infectedState = 0;
+          this.virusTime = -1;
+        }
+      }
 
     } else {
       this.direction = time / 50;
@@ -192,8 +206,8 @@ class Dot {
     }
 
     this.directionD = lerp(this.directionD, this.direction, 0.1);
-    this.xD = lerp(this.xD, this.x, 0.8);
-    this.yD = lerp(this.yD, this.y, 0.8);
+    this.xD = lerp(this.xD, this.x, 0.2);
+    this.yD = lerp(this.yD, this.y, 0.2);
     this.sizeD = lerp(this.sizeD, this.size, 0.04);
     this.rD = lerp(this.rD, this.r, 0.04);
     this.gD = lerp(this.gD, this.g, 0.04);
@@ -212,15 +226,18 @@ class Dot {
     stroke(0);
     fill(this.rD, this.gD, this.bD);
     ellipse(this.xD, this.yD, this.sizeD, this.sizeD);
+    fill(0);
+    let vuld = map(this.vulnerability, 2, 0, 0, this.sizeD / 2);
+    ellipse(this.xD, this.yD, vuld, vuld);
     line(this.xD, this.yD, this.xD + Math.sin(this.directionD) * this.sizeD / 2, this.yD + Math.cos(this.directionD) * this.sizeD / 2);
     for (let dot of population) {
-      if (dot != this && !dot.dead) {
+      if (dot != this && !dot.dead && dot.infectedState === 0) {
         if (dist(this.x, this.y, dot.x, dot.y) < 100) {
           if(this.infectedState === 1) { // They Get Infected!
-            let lineMod = map(dist(this.x, this.y, dot.x, dot.y), 80, 100, 255, 0);
-            strokeWeight(map(dist(this.x, this.y, dot.x, dot.y), 80, 100, 4, 0));
+            let lineMod = map(dist(this.xD, this.yD, dot.xD, dot.yD), 80, 100, 255, 0);
+            strokeWeight(map(dist(this.x, this.yD, dot.xD, dot.yD), 80, 100, 4, 0));
             stroke(204, 63, 63, lineMod);
-            line(this.x, this.y, dot.x, dot.y);
+            line(this.xD, this.yD, dot.xD, dot.yD);
           }
         }
 
